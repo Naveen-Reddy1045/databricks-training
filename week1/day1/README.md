@@ -7,7 +7,6 @@
 ## Files
 - SQL files
 - Output files
-- Notes
 
 ## Summary
 Completed the initial repository and folder setup for Databricks training.
