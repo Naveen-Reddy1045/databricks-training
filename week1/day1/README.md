@@ -9,4 +9,4 @@
 - Output files
 
 ## Summary
-Completed the initial repository and folder setup for Databricks training.
+Completed the initial repository, folder setup for Databricks training and basic sql queries.
