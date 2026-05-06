@@ -3,7 +3,7 @@
 ## Topics Covered
 - Repository setup
 - GitHub folder structure
-
+- Basic SQL queries
 ## Files
 - SQL files
 - Output files
