@@ -212,60 +212,228 @@ HAVING COUNT(CASE WHEN st.salary IS NULL THEN 1 END) = 0;
 
 -- 31. Assign a row number to students ordered by CGPA.
 
+SELECT student_name,
+       cgpa,
+       ROW_NUMBER() OVER(ORDER BY cgpa DESC) AS row_num
+FROM Student;
+
 
 -- 32. Rank students based on their CGPA.
+
+SELECT student_name,
+       cgpa,
+       RANK() OVER(ORDER BY cgpa DESC) AS student_rank
+FROM Student;
 
 
 -- 33. Display dense rank of staff salaries.
 
+SELECT staff_name,
+       salary,
+       DENSE_RANK() OVER(ORDER BY salary DESC) AS dense_rank_salary
+FROM Staff;
+
 
 -- 34. Find the top 3 highest scoring students using window functions.
+
+SELECT *
+FROM (
+    SELECT s.student_name,
+           m.marks,
+           ROW_NUMBER() OVER(ORDER BY m.marks DESC) AS rn
+    FROM Student s
+    JOIN Mark m
+    ON s.student_id = m.student_id
+) t
+WHERE rn <= 3;
 
 
 -- 35. Display running total of marks for each student.
 
+SELECT s.student_name,
+       m.exam_date,
+       m.marks,
+       SUM(m.marks) OVER(PARTITION BY s.student_id ORDER BY m.exam_date) AS running_total
+FROM Student s
+JOIN Mark m
+ON s.student_id = m.student_id;
+
 
 -- 36. Find the average marks for each subject using window functions.
+
+SELECT sub.subject_name,
+       m.marks,
+       AVG(m.marks) OVER(PARTITION BY sub.subject_id) AS avg_marks
+FROM Subject sub
+JOIN Mark m
+ON sub.subject_id = m.subject_id;
 
 
 -- 37. Display previous exam marks for each student using LAG().
 
+SELECT s.student_name,
+       m.exam_date,
+       m.marks,
+       LAG(m.marks) OVER(PARTITION BY s.student_id ORDER BY m.exam_date) AS previous_marks
+FROM Student s
+JOIN Mark m
+ON s.student_id = m.student_id;
+
 
 -- 38. Display next exam marks for each student using LEAD().
+
+SELECT s.student_name,
+       m.exam_date,
+       m.marks,
+       LEAD(m.marks) OVER(PARTITION BY s.student_id ORDER BY m.exam_date) AS next_marks
+FROM Student s
+JOIN Mark m
+ON s.student_id = m.student_id;
 
 
 -- 39. Find the highest marks within each subject using MAX() OVER().
 
+SELECT sub.subject_name,
+       m.marks,
+       MAX(m.marks) OVER(PARTITION BY sub.subject_id) AS highest_marks
+FROM Subject sub
+JOIN Mark m
+ON sub.subject_id = m.subject_id;
+
 
 -- 40. Display cumulative average marks ordered by exam date.
+
+SELECT exam_date,
+       marks,
+       AVG(marks) OVER(ORDER BY exam_date) AS cumulative_avg
+FROM Mark;
 
 
 -- 41. Find the first student admitted in each department.
 
+SELECT *
+FROM (
+    SELECT s.student_name,
+           d.department_name,
+           s.admission_year,
+           ROW_NUMBER() OVER(PARTITION BY d.department_id ORDER BY s.admission_year) AS rn
+    FROM Student s
+    JOIN Department d
+    ON s.department_id = d.department_id
+) t
+WHERE rn = 1;
+
 
 -- 42. Display the latest hired staff member in each department.
+
+SELECT *
+FROM (
+    SELECT st.staff_name,
+           d.department_name,
+           st.hire_date,
+           ROW_NUMBER() OVER(PARTITION BY d.department_id ORDER BY st.hire_date DESC) AS rn
+    FROM Staff st
+    JOIN Department d
+    ON st.department_id = d.department_id
+) t
+WHERE rn = 1;
 
 
 -- 43. Divide students into 4 CGPA quartiles using NTILE().
 
+SELECT student_name,
+       cgpa,
+       NTILE(4) OVER(ORDER BY cgpa DESC) AS cgpa_quartile
+FROM Student;
+
 
 -- 44. Find percentage rank of students based on CGPA.
+
+SELECT student_name,
+       cgpa,
+       PERCENT_RANK() OVER(ORDER BY cgpa DESC) AS percent_rank
+FROM Student;
 
 
 -- 45. Display cumulative distribution of salaries.
 
+SELECT staff_name,
+       salary,
+       CUME_DIST() OVER(ORDER BY salary DESC) AS cumulative_distribution
+FROM Staff;
+
 
 -- 46. Find subjects where a student's marks are above the subject average.
-
-
+    SELECT s.student_name,
+           sub.subject_name,
+           m.marks
+    FROM Student s
+    JOIN Mark m
+    ON s.student_id = m.student_id
+    JOIN Subject sub
+    ON m.subject_id = sub.subject_id
+    WHERE m.marks > (
+        SELECT AVG(m2.marks)
+        FROM Mark m2
+        WHERE m.subject_id = m2.subject_id
+    );
 -- 47. Find departments whose average staff salary is higher than overall average salary.
+    SELECT d.department_name,
+           AVG(st.salary) AS avg_salary
+    FROM Department d
+    JOIN Staff st
+    ON d.department_id = st.department_id
+    GROUP BY d.department_name
+    HAVING AVG(st.salary) > (
+        SELECT AVG(salary)
+        FROM Staff
+    );
 
 
 -- 48. Display students who scored above department average marks.
 
+    SELECT s.student_name,
+           d.department_name,
+           m.marks
+    FROM Student s
+    JOIN Department d
+    ON s.department_id = d.department_id
+    JOIN Mark m
+    ON s.student_id = m.student_id
+    WHERE m.marks > (
+        SELECT AVG(m2.marks)
+        FROM Student s2
+        JOIN Mark m2
+        ON s2.student_id = m2.student_id
+        WHERE s2.department_id = s.department_id
+    );
+
 
 -- 49. Find the nth highest mark (3rd highest) using DENSE_RANK().
 
+    SELECT marks
+    FROM (
+        SELECT marks,
+               DENSE_RANK() OVER(ORDER BY marks DESC) AS dr
+        FROM Mark
+    ) t
+    WHERE dr = 3;
+
 
 -- 50. Generate a report showing student name, department, subject, exam type, marks, department average, and overall rank.
+
+    SELECT s.student_name,
+           d.department_name,
+           sub.subject_name,
+           m.exam_type,
+           m.marks,
+           AVG(m.marks) OVER(PARTITION BY d.department_id) AS department_average,
+           RANK() OVER(ORDER BY m.marks DESC) AS overall_rank
+    FROM Student s
+    JOIN Department d
+    ON s.department_id = d.department_id
+    JOIN Mark m
+    ON s.student_id = m.student_id
+    JOIN Subject sub
+    ON m.subject_id = sub.subject_id;
 
